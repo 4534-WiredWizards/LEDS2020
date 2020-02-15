@@ -7,31 +7,45 @@
 #define BRIGHTNESS 60
 
 CRGB leds[NUM_LEDS];
-int mode = 0;
+char mode = '0';
 int ledposcase3 = 1;
 int ledstackcase3 = 0;
+int ledamountcase7 = 20;
+int ledposrecordcase7[20];
+int pointercase7 = 0;
 void setup() {
   delay(1000);
   FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER> (leds, NUM_LEDS)
   .setCorrection(TypicalLEDStrip)
   .setDither(BRIGHTNESS < 255);
   FastLED.setBrightness(BRIGHTNESS);
-  mode = 4;
+  Serial.begin(9600);
+  Serial.println("Begin");
 }
 
 void loop() {
+  if (Serial.available() > 1){
+     int prevMode = mode;
+     mode = Serial.read();
+     if (mode != prevMode) {
+        for (int i = 0; i < NUM_LEDS; i++) {
+           leds[i] = CHSV(0, 0, 0);
+        }
+        FastLED.show();
+     }
+  }
   switch (mode) {
-    case 0:
+    case '0':
       for (int i = 0; i < NUM_LEDS; i++) {
         leds[i] = CHSV(i * 7 + millis() / 10, 187, 255);
       }
       break;
-    case 1:
+    case '1':
       for (int i = 0; i < NUM_LEDS; i++) {
         leds[i] = CHSV(millis() / 10, 187, 255);
       }
       break;
-    case 2:
+    case '2':
       for (int i = 0; i < NUM_LEDS; i++) {
         if (i % 20 < 2) {
           leds[(i - millis() / 50) % NUM_LEDS] = CHSV(180, 0, 255);
@@ -44,7 +58,7 @@ void loop() {
         }
       }
       break;
-    case 3:
+    case '3':
       delay(30);
       if (ledposcase3 - 1 > -1) {
         leds[ledposcase3 - 1] = CHSV(0, 0, 0);
@@ -64,7 +78,7 @@ void loop() {
         ledstackcase3 = 0;
       }
       break;
-    case 4:
+    case '4':
       for (int i = 0; i < NUM_LEDS; i++) {
         if (i % 20 < 2) {
           leds[(i - millis() / 50) % NUM_LEDS] = CHSV(100, 0, 255);
@@ -77,7 +91,7 @@ void loop() {
         }
       }
       break;
-    case 5:
+    case '5':
       for (int i = 0; i < NUM_LEDS; i++) {
         if (i % 20 < 5) {
           switch (i % 20) {
@@ -125,13 +139,23 @@ void loop() {
         }
       }
       break;
-    case 6:
+    case '6':
       for (int i = 0; i < NUM_LEDS; i++) {
       CHSV spectrumcolor;
       spectrumcolor.hue = i * 7 + millis() / 10;
       spectrumcolor.saturation = 187;
       spectrumcolor.value = 255;
       hsv2rgb_spectrum(spectrumcolor, leds[i]);
+      }
+      break;
+    case '7':
+      delay(100);
+      ledposrecordcase7[pointercase7] = random(0, NUM_LEDS);
+      pointercase7++;
+      if(pointercase7 > ledamountcase7 - 1) pointercase7 = 0;
+      for (int i = 0; i < ledamountcase7; i++) {
+        if(pointercase7 > i) leds[ledposrecordcase7[i]] = CHSV(100, 0, 225 - ((pointercase7 - i) * (225/ (ledamountcase7 - 1))));
+        else leds[ledposrecordcase7[i]] = CHSV(100, 0, 225 - ((pointercase7 + ledamountcase7 - 1 - i) * (225/ (ledamountcase7 - 1))));
       }
       break;
   }
